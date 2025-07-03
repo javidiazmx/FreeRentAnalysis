@@ -25,10 +25,10 @@
         results.innerHTML = `<p>${data.error}</p>`;
       } else {
         results.innerHTML = `
-          <p><strong>Beds:</strong> ${data.beds}</p>
-          <p><strong>Baths:</strong> ${data.baths}</p>
-          <p><strong>Sq Ft:</strong> ${data.sqft}</p>
-          <p><strong>Year Built:</strong> ${data.year_built}</p>
+          <p><strong>Beds:</strong> ${data.beds ?? 'N/A'}</p>
+          <p><strong>Baths:</strong> ${data.baths ?? 'N/A'}</p>
+          <p><strong>Sq Ft:</strong> ${data.sqft ?? 'N/A'}</p>
+          <p><strong>Year Built:</strong> ${data.year_built ?? 'N/A'}</p>
         `;
       }
     }
