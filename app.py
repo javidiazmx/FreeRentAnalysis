@@ -13,41 +13,47 @@ def index():
 
 @app.route('/lookup', methods=['POST'])
 def lookup():
-    data = request.get_json()
-    address = data.get('address')
+    try:
+        data = request.get_json()
+        address = data.get('address')
 
-    if not address:
-        return jsonify({'error': 'Missing address'}), 400
+        if not address:
+            return jsonify({'error': 'Missing address'}), 400
 
-    res = requests.get(
-        'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address',
-        params={'fulladdress': address},
-        headers={
-            'Accept': 'application/json',
-            'apikey': ATTOM_KEY
-        }
-    )
+        res = requests.get(
+            'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address',
+            params={'fulladdress': address},
+            headers={
+                'Accept': 'application/json',
+                'apikey': ATTOM_KEY
+            }
+        )
 
-    print(f"Status Code: {res.status_code}")
-    print(f"Response Text: {res.text}")  # <--- DEBUG LINE
+        print(f"Status Code: {res.status_code}")
+        print(f"Response Text: {res.text}")
 
-    if res.status_code != 200:
-        return jsonify({'error': 'Failed to retrieve data'}), 500
+        if res.status_code != 200:
+            return jsonify({'error': f'ATTOM error: {res.status_code}'}), res.status_code
 
-    results = res.json()
-    props = results.get('property', [])
-    if not props:
-        return jsonify({'error': 'No data found'}), 404
+        results = res.json()
+        props = results.get('property', [])
+        if not props:
+            return jsonify({'error': 'No data found'}), 404
 
-    prop = props[0]
-    struct = prop.get('building', {})
+        prop = props[0]
+        struct = prop.get('building', {})
 
-    return jsonify({
-        'beds': struct.get('rooms', {}).get('beds'),
-        'baths': struct.get('rooms', {}).get('baths'),
-        'sqft': struct.get('size', {}).get('universalsize'),
-        'year_built': struct.get('yearbuilt')
-    })
+        return jsonify({
+            'beds': struct.get('rooms', {}).get('beds'),
+            'baths': struct.get('rooms', {}).get('baths'),
+            'sqft': struct.get('size', {}).get('universalsize'),
+            'year_built': struct.get('yearbuilt')
+        })
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
