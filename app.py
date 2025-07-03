@@ -67,16 +67,18 @@ def lookup():
             or prop.get('summary', {}).get('yearbuilt') \
             or 'N/A'
 
-        return jsonify({
-            'beds': beds,
-            'baths': baths,
-            'sqft': sqft,
-            'year_built': year_built
-        })
+            return jsonify({
+        'beds': beds,
+        'baths': baths,
+        'sqft': sqft,
+        'year_built': year_built
+    })
 
     except Exception as e:
         print(f"Exception occurred: {e}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
