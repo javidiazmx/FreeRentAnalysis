@@ -47,6 +47,7 @@ def lookup():
             return jsonify({'error': 'No data found'}), 404
 
         prop = props[0]
+        print(json.dumps(prop, indent=2))
         struct = prop.get('building', {})
 
         # Fallback field logic
