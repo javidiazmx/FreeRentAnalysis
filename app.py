@@ -6,7 +6,7 @@ import json
 app = Flask(__name__)
 
 # Read API key from environment variable or fallback
-ATTOM_KEY = os.environ.get('ATTOM_KEY', 'YOUR_API_KEY_HERE')
+ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
 
 # Serve the HTML page
 @app.route('/')
