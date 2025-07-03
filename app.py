@@ -5,15 +5,13 @@ import json
 
 app = Flask(__name__)
 
-# Read API key from environment variable or fallback
-ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
+# Use your ATTOM API key
+ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')  # Fallback for local dev
 
-# Serve the HTML page
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Handle property lookup via ATTOM API
 @app.route('/lookup', methods=['POST'])
 def lookup():
     try:
@@ -23,14 +21,14 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
-        # Split address into street and city/state
+        # Split address into required components
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
-        # Send request to ATTOM
+        # Request detailed property data from ATTOM
         res = requests.get(
-            'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address',
+            'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail',
             params={'address1': address1, 'address2': address2},
             headers={'Accept': 'application/json', 'apikey': ATTOM_KEY}
         )
@@ -48,10 +46,10 @@ def lookup():
 
         prop = props[0]
         print("ATTOM PROP JSON:", json.dumps(prop, indent=2))
-        
+
         struct = prop.get('building', {})
 
-        # Fallback field logic
+        # Fallback logic for missing fields
         beds = struct.get('rooms', {}).get('beds') \
             or prop.get('summary', {}).get('beds_count') \
             or 'N/A'
@@ -80,7 +78,6 @@ def lookup():
         print(f"Exception occurred: {e}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-# Run the Flask app with correct port binding for Render
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
