@@ -5,13 +5,15 @@ import json
 
 app = Flask(__name__)
 
-# Replace this with your actual ATTOM API key or use Render env variable
+# Read API key from environment variable or fallback (for local testing)
 ATTOM_KEY = os.environ.get('ATTOM_KEY', 'YOUR_API_KEY_HERE')
 
+# Serve the index.html page
 @app.route('/')
 def index():
     return render_template('index.html')
-    
+
+# Handle property lookup
 @app.route('/lookup', methods=['POST'])
 def lookup():
     try:
@@ -21,11 +23,12 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
-        # Split address into two parts: street and city/state/zip
+        # Split full address into address1 (street) and address2 (city/state/zip)
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
+        # Request property data from ATTOM
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address',
             params={'address1': address1, 'address2': address2},
@@ -44,40 +47,22 @@ def lookup():
             return jsonify({'error': 'No data found'}), 404
 
         prop = props[0]
-        print(json.dumps(prop, indent=2))
+        print(json.dumps(prop, indent=2))  # Debug full object
         struct = prop.get('building', {})
 
-        return jsonify({
-           beds = struct.get('rooms', {}).get('beds') \
-    or prop.get('summary', {}).get('beds_count') \
-    or 'N/A'
+        # Fallback parsing for each field
+        beds = struct.get('rooms', {}).get('beds') \
+            or prop.get('summary', {}).get('beds_count') \
+            or 'N/A'
 
-baths = struct.get('rooms', {}).get('baths') \
-    or prop.get('summary', {}).get('baths_count') \
-    or 'N/A'
+        baths = struct.get('rooms', {}).get('baths') \
+            or prop.get('summary', {}).get('baths_count') \
+            or 'N/A'
 
-sqft = struct.get('size', {}).get('universalsize') \
-    or struct.get('size', {}).get('grosssize') \
-    or prop.get('summary', {}).get('building_area') \
-    or 'N/A'
+        sqft = struct.get('size', {}).get('universalsize') \
+            or struct.get('size', {}).get('grosssize') \
+            or prop.get('summary', {}).get('building_area') \
+            or 'N/A'
 
-year_built = struct.get('yearbuilt') \
-    or prop.get('summary', {}).get('yearbuilt') \
-    or 'N/A'
-
-return jsonify({
-    'beds': beds,
-    'baths': baths,
-    'sqft': sqft,
-    'year_built': year_built
-})
-
-    except Exception as e:
-        print(f"Exception occurred: {e}")
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
-
-
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+        year_built = struct.get('yearbuilt') \
+            or prop.get('summary', {}).get('yearbuilt')
