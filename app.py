@@ -48,11 +48,29 @@ def lookup():
         struct = prop.get('building', {})
 
         return jsonify({
-            'beds': struct.get('rooms', {}).get('beds'),
-            'baths': struct.get('rooms', {}).get('baths'),
-            'sqft': struct.get('size', {}).get('universalsize'),
-            'year_built': struct.get('yearbuilt')
-        })
+           beds = struct.get('rooms', {}).get('beds') \
+    or prop.get('summary', {}).get('beds_count') \
+    or 'N/A'
+
+baths = struct.get('rooms', {}).get('baths') \
+    or prop.get('summary', {}).get('baths_count') \
+    or 'N/A'
+
+sqft = struct.get('size', {}).get('universalsize') \
+    or struct.get('size', {}).get('grosssize') \
+    or prop.get('summary', {}).get('building_area') \
+    or 'N/A'
+
+year_built = struct.get('yearbuilt') \
+    or prop.get('summary', {}).get('yearbuilt') \
+    or 'N/A'
+
+return jsonify({
+    'beds': beds,
+    'baths': baths,
+    'sqft': sqft,
+    'year_built': year_built
+})
 
     except Exception as e:
         print(f"Exception occurred: {e}")
