@@ -48,6 +48,7 @@ def lookup():
 
         prop = props[0]
         print("ATTOM PROP JSON:", json.dumps(prop, indent=2))
+        
         struct = prop.get('building', {})
 
         # Fallback field logic
