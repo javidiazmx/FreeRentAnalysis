@@ -23,12 +23,12 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
-        # Split full address into address1 (street) and address2 (city/state/zip)
+        # Split full address into street and city/state/zip
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
-        # Request property data from ATTOM
+        # Call ATTOM API
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/address',
             params={'address1': address1, 'address2': address2},
@@ -47,10 +47,9 @@ def lookup():
             return jsonify({'error': 'No data found'}), 404
 
         prop = props[0]
-        print(json.dumps(prop, indent=2))  # Debug full object
         struct = prop.get('building', {})
 
-        # Fallback parsing for each field
+        # Use fallback logic
         beds = struct.get('rooms', {}).get('beds') \
             or prop.get('summary', {}).get('beds_count') \
             or 'N/A'
@@ -65,4 +64,16 @@ def lookup():
             or 'N/A'
 
         year_built = struct.get('yearbuilt') \
-            or prop.get('summary', {}).get('yearbuilt')
+            or prop.get('summary', {}).get('yearbuilt') \
+            or 'N/A'
+
+        return jsonify({
+            'beds': beds,
+            'baths': baths,
+            'sqft': sqft,
+            'year_built': year_built
+        })
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
