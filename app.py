@@ -7,6 +7,10 @@ app = Flask(__name__)
 # Replace this with your actual ATTOM API key or use Render env variable
 ATTOM_KEY = os.environ.get('ATTOM_KEY', 'YOUR_API_KEY_HERE')
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+    
 @app.route('/lookup', methods=['POST'])
 def lookup():
     try:
