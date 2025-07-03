@@ -28,8 +28,10 @@ def lookup():
         }
     )
 
+    print(f"Status Code: {res.status_code}")
+    print(f"Response Text: {res.text}")  # <--- DEBUG LINE
+
     if res.status_code != 200:
-        print(f"ATTOM ERROR: {res.status_code} - {res.text}")
         return jsonify({'error': 'Failed to retrieve data'}), 500
 
     results = res.json()
