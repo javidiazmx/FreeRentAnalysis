@@ -69,7 +69,7 @@ def lookup():
 
         return jsonify({
             'beds': beds,
-            'baths': baths,
+            'bathstotal': baths,
             'sqft': sqft,
             'year_built': year_built
         })
