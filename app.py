@@ -55,8 +55,9 @@ def lookup():
             or 'N/A'
 
         baths = struct.get('rooms', {}).get('baths') \
-            or prop.get('summary', {}).get('baths_count') \
-            or 'N/A'
+    or struct.get('bathstotal') \
+    or prop.get('summary', {}).get('baths_count') \
+    or 'N/A'
 
         sqft = struct.get('size', {}).get('universalsize') \
             or struct.get('size', {}).get('grosssize') \
@@ -69,7 +70,7 @@ def lookup():
 
         return jsonify({
             'beds': beds,
-            'bathstotal': baths,
+            'baths': baths,
             'sqft': sqft,
             'year_built': year_built
         })
