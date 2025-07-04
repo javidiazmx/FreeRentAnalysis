@@ -21,12 +21,10 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
-        # Split address into required components
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
-        # Request detailed property data from ATTOM
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail',
             params={'address1': address1, 'address2': address2},
@@ -45,18 +43,21 @@ def lookup():
             return jsonify({'error': 'No data found'}), 404
 
         prop = props[0]
-        print("ATTOM PROP JSON:", json.dumps(prop, indent=2))
-
         struct = prop.get('building', {})
 
         beds = struct.get('rooms', {}).get('beds') \
             or prop.get('summary', {}).get('beds_count') \
             or 'N/A'
 
-        baths = struct.get('rooms', {}).get('baths') \
-            or prop.get('bathstotal') \
-            or prop.get('summary', {}).get('baths_count') \
-            or 'N/A'
+        # ✅ bathstotal is NOT inside 'building', it's at the top level
+        baths = prop.get('bathstotal') \
+        or struct.get('rooms', {}).get('baths') \
+        or prop.get('summary', {}).get('baths_count')
+
+        if baths:
+        baths = int(baths) if float(baths).is_integer() else round(float(baths), 1)
+        else:
+        baths = 'N/A'
 
         sqft = struct.get('size', {}).get('universalsize') \
             or struct.get('size', {}).get('grosssize') \
