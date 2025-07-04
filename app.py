@@ -5,8 +5,8 @@ import json
 
 app = Flask(__name__)
 
-# Use your ATTOM API key
-ATTOM_KEY = os.environ.get('ATTOM_KEY', 'YOUR_ACTUAL_KEY_HERE')
+# ATTOM API Key
+ATTOM_KEY = os.environ.get('ATTOM_KEY', 'YOUR_REAL_KEY_HERE')
 
 @app.route('/')
 def index():
@@ -21,7 +21,7 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
-        # Split into address1 and address2 for ATTOM API
+        # Separate address1 and address2
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
@@ -46,44 +46,20 @@ def lookup():
         prop = props[0]
         struct = prop.get('building', {})
 
-        # Bedrooms
+        # Beds
         beds = struct.get('rooms', {}).get('beds') \
             or prop.get('summary', {}).get('beds_count') \
             or 'N/A'
 
-        # Bathrooms with rounding
+        # Baths - now checking directly under root property first
         raw_baths = prop.get('bathstotal') \
             or struct.get('rooms', {}).get('baths') \
             or prop.get('summary', {}).get('baths_count')
 
-        if raw_baths:
-            baths = int(raw_baths) if float(raw_baths).is_integer() else round(float(raw_baths), 1)
+        if raw_baths is not None:
+            try:
+                baths = int(raw_baths) if float(raw_baths).is_integer() else round(float(raw_baths), 1)
+            except:
+                baths = 'N/A'
         else:
-            baths = 'N/A'
-
-        # Square feet
-        sqft = struct.get('size', {}).get('universalsize') \
-            or struct.get('size', {}).get('grosssize') \
-            or prop.get('summary', {}).get('building_area') \
-            or 'N/A'
-
-        # Year built
-        year_built = struct.get('yearbuilt') \
-            or prop.get('yearbuilt') \
-            or prop.get('summary', {}).get('yearbuilt') \
-            or 'N/A'
-
-        return jsonify({
-            'beds': beds,
-            'baths': baths,
-            'sqft': sqft,
-            'year_built': year_built
-        })
-
-    except Exception as e:
-        print(f"Exception occurred: {e}")
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+            baths =
