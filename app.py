@@ -54,7 +54,7 @@ def lookup():
             or 'N/A'
 
         baths = struct.get('rooms', {}).get('baths') \
-            or struct.get('bathstotal') \
+            or prop.get('bathstotal') \
             or prop.get('summary', {}).get('baths_count') \
             or 'N/A'
 
@@ -64,6 +64,7 @@ def lookup():
             or 'N/A'
 
         year_built = struct.get('yearbuilt') \
+            or prop.get('yearbuilt') \
             or prop.get('summary', {}).get('yearbuilt') \
             or 'N/A'
 
