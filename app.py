@@ -49,23 +49,23 @@ def lookup():
 
         struct = prop.get('building', {})
 
-beds = struct.get('rooms', {}).get('beds') \
-    or prop.get('summary', {}).get('beds_count') \
-    or 'N/A'
+        beds = struct.get('rooms', {}).get('beds') \
+            or prop.get('summary', {}).get('beds_count') \
+            or 'N/A'
 
-baths = struct.get('rooms', {}).get('baths') \
-    or struct.get('bathstotal') \
-    or prop.get('summary', {}).get('baths_count') \
-    or 'N/A'
+        baths = struct.get('rooms', {}).get('baths') \
+            or struct.get('bathstotal') \
+            or prop.get('summary', {}).get('baths_count') \
+            or 'N/A'
 
-sqft = struct.get('size', {}).get('universalsize') \
-    or struct.get('size', {}).get('grosssize') \
-    or prop.get('summary', {}).get('building_area') \
-    or 'N/A'
+        sqft = struct.get('size', {}).get('universalsize') \
+            or struct.get('size', {}).get('grosssize') \
+            or prop.get('summary', {}).get('building_area') \
+            or 'N/A'
 
-year_built = struct.get('yearbuilt') \
-    or prop.get('summary', {}).get('yearbuilt') \
-    or 'N/A'
+        year_built = struct.get('yearbuilt') \
+            or prop.get('summary', {}).get('yearbuilt') \
+            or 'N/A'
 
         return jsonify({
             'beds': beds,
