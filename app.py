@@ -6,7 +6,7 @@ import json
 app = Flask(__name__)
 
 # ATTOM API Key
-ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
+ATTOM_KEY = os.environ.get('ATTOM_KEY', 'YOUR_REAL_KEY_HERE')
 
 @app.route('/')
 def index():
@@ -62,4 +62,31 @@ def lookup():
             except:
                 baths = 'N/A'
         else:
-            baths =
+            baths = 'N/A'
+
+        # Sq Ft
+        sqft = struct.get('size', {}).get('universalsize') \
+            or struct.get('size', {}).get('grosssize') \
+            or prop.get('summary', {}).get('building_area') \
+            or 'N/A'
+
+        # Year Built
+        year_built = struct.get('yearbuilt') \
+            or prop.get('yearbuilt') \
+            or prop.get('summary', {}).get('yearbuilt') \
+            or 'N/A'
+
+        return jsonify({
+            'beds': beds,
+            'baths': baths,
+            'sqft': sqft,
+            'year_built': year_built
+        })
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=True, host='0.0.0.0', port=port)
