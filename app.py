@@ -5,7 +5,7 @@ import json
 
 app = Flask(__name__)
 
-# ATTOM API key (fallback for local testing)
+# ATTOM API key (replace this in Render secrets)
 ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
 
 @app.route('/')
@@ -21,20 +21,20 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
-        # Parse address into address1 and address2
+        # Split address into parts
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
-        # Request to ATTOM
+        # Call ATTOM API
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail',
             params={'address1': address1, 'address2': address2},
             headers={'Accept': 'application/json', 'apikey': ATTOM_KEY}
         )
 
-        print(f"Status Code: {res.status_code}")
-        print(f"Response Text: {res.text}")
+        print(f"==> ATTOM Status Code: {res.status_code}")
+        print(f"==> ATTOM Response: {res.text}")
 
         if res.status_code != 200:
             return jsonify({'error': f'ATTOM error: {res.status_code}'}), res.status_code
@@ -42,28 +42,46 @@ def lookup():
         results = res.json()
         props = results.get('property', [])
         if not props:
+            print("==> No properties found in response.")
             return jsonify({'error': 'No property data found'}), 404
 
         prop = props[0]
+        print("==> Raw Property JSON:")
+        print(json.dumps(prop, indent=2))
+
         building = prop.get('building', {})
         summary = prop.get('summary', {})
+        rooms = building.get('rooms', {})
+        size = building.get('size', {})
 
-        # Extract values with correct priority order
-        beds = building.get('rooms', {}).get('beds') \
-            or summary.get('beds_count') \
-            or 'N/A'
+        # LOG each possible value
+        print(f"building.rooms.beds: {rooms.get('beds')}")
+        print(f"summary.beds_count: {summary.get('beds_count')}")
+        print(f"bathstotal: {prop.get('bathstotal')}")
+        print(f"building.rooms.baths: {rooms.get('baths')}")
+        print(f"summary.baths_count: {summary.get('baths_count')}")
+        print(f"size.universalsize: {size.get('universalsize')}")
+        print(f"size.grosssize: {size.get('grosssize')}")
+        print(f"summary.building_area: {summary.get('building_area')}")
+        print(f"prop.yearbuilt: {prop.get('yearbuilt')}")
+        print(f"building.yearbuilt: {building.get('yearbuilt')}")
+        print(f"summary.yearbuilt: {summary.get('yearbuilt')}")
 
-        baths = prop.get('bathstotal') \
-            or building.get('rooms', {}).get('baths') \
-            or summary.get('baths_count') \
-            or 'N/A'
+        # Extract values using correct fallback logic
+        beds = rooms.get('beds') or summary.get('beds_count') or 'N/A'
 
-        # Normalize bath display (e.g., 3.0 => 3)
-        if isinstance(baths, (int, float)):
-            baths = int(baths) if float(baths).is_integer() else round(float(baths), 1)
+        # Try every path for baths — also cast float to int when needed
+        raw_baths = prop.get('bathstotal') \
+            or rooms.get('baths') \
+            or summary.get('baths_count')
 
-        sqft = building.get('size', {}).get('universalsize') \
-            or building.get('size', {}).get('grosssize') \
+        if isinstance(raw_baths, (int, float)):
+            baths = int(raw_baths) if float(raw_baths).is_integer() else round(float(raw_baths), 1)
+        else:
+            baths = 'N/A'
+
+        sqft = size.get('universalsize') \
+            or size.get('grosssize') \
             or summary.get('building_area') \
             or 'N/A'
 
@@ -80,7 +98,7 @@ def lookup():
         })
 
     except Exception as e:
-        print(f"Exception occurred: {e}")
+        print(f"==> Exception occurred: {e}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
