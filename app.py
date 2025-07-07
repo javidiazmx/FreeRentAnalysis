@@ -30,9 +30,6 @@ def lookup():
             headers={'Accept': 'application/json', 'apikey': ATTOM_KEY}
         )
 
-        print(f"Status Code: {res.status_code}", flush=True)
-        print(f"Response Text: {res.text}", flush=True)
-
         if res.status_code != 200:
             return jsonify({'error': f'ATTOM error: {res.status_code}'}), res.status_code
 
@@ -42,51 +39,46 @@ def lookup():
             return jsonify({'error': 'No data found'}), 404
 
         prop = props[0]
-        print("ATTOM PROP JSON:", json.dumps(prop, indent=2), flush=True)
-
         building = prop.get('building', {})
-        summary = prop.get('summary', {})
         rooms = building.get('rooms', {})
+        size = building.get('size', {})
+        interior = building.get('interior', {})
+        parking = building.get('parking', {})
+        summary = building.get('summary', {})
+        prop_summary = prop.get('summary', {})
 
-        beds = (
-            rooms.get('beds') or
-            summary.get('beds_count') or
-            'N/A'
-        )
-        print("✅ Extracted Beds:", beds, flush=True)
+        beds = rooms.get('beds') or prop_summary.get('beds_count') or 'N/A'
+        baths = rooms.get('bathstotal') or prop_summary.get('baths_count') or 'N/A'
+        sqft = size.get('universalsize') or size.get('grosssize') or prop_summary.get('building_area') or 'N/A'
+        year_built = building.get('yearbuilt') or prop_summary.get('yearbuilt') or 'N/A'
 
-        baths = (
-            rooms.get('bathstotal') or
-            rooms.get('bathsfull') or
-            summary.get('baths_count') or
-            'N/A'
-        )
-        print("✅ Extracted Baths:", baths, flush=True)
-
-        sqft = (
-            building.get('size', {}).get('universalsize') or
-            building.get('size', {}).get('grosssize') or
-            summary.get('building_area') or
-            'N/A'
-        )
-        print("✅ Extracted SqFt:", sqft, flush=True)
-
-        year_built = (
-            building.get('yearbuilt') or
-            summary.get('yearbuilt') or
-            'N/A'
-        )
-        print("✅ Extracted Year Built:", year_built, flush=True)
+        # New fields
+        garage_type = parking.get('garagetype', 'N/A')
+        parking_spaces = parking.get('prkgSpaces', 'N/A')
+        arch_style = summary.get('archStyle', 'N/A')
+        basement_type = interior.get('bsmttype', 'N/A')
+        basement_size = interior.get('bsmtsize', 'N/A')
+        cooling = interior.get('cooling', 'N/A')
+        heating = interior.get('heating', 'N/A')
+        prop_class = summary.get('bldgType') or prop_summary.get('propclass') or 'N/A'
 
         return jsonify({
             'beds': beds,
             'baths': baths,
             'sqft': sqft,
-            'year_built': year_built
+            'year_built': year_built,
+            'garage_type': garage_type,
+            'parking_spaces': parking_spaces,
+            'arch_style': arch_style,
+            'basement_type': basement_type,
+            'basement_size': basement_size,
+            'cooling': cooling,
+            'heating': heating,
+            'property_class': prop_class
         })
 
     except Exception as e:
-        print(f"❌ Exception occurred: {e}", flush=True)
+        print(f"Exception occurred: {e}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
