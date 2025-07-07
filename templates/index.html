@@ -1,45 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Free Rent Analysis</title>
+    <title>Free Rent Analysis</title>
+    <style>
+        body {
+            font-family: Arial;
+            max-width: 600px;
+            margin: 40px auto;
+        }
+        label, p {
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-  <h2>Free Rent Analysis</h2>
-  <input id="address" placeholder="Enter address..." />
-  <button onclick="lookup()">Analyze</button>
+    <h2>Free Rent Analysis</h2>
 
-  <div id="results"></div>
+    <form method="POST" action="/lookup">
+        <input type="text" name="address" placeholder="Enter full address" value="{{ address or '' }}" required>
+        <button type="submit">Analyze</button>
+    </form>
 
-  <script>
-    async function lookup() {
-      const address = document.getElementById('address').value;
-      const res = await fetch('/lookup', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({address})
-      });
-      const data = await res.json();
-      const results = document.getElementById('results');
-      if (data.error) {
-        results.innerHTML = `<p>${data.error}</p>`;
-      } else {
-        results.innerHTML = `
-          <p><strong>Beds:</strong> ${data.beds ?? 'N/A'}</p>
-          <p><strong>Baths:</strong> ${data.baths ?? 'N/A'}</p>
-          <p><strong>Sq Ft:</strong> ${data.sqft ?? 'N/A'}</p>
-          <p><strong>Year Built:</strong> ${data.year_built ?? 'N/A'}</p>
-          <p><strong>Garage Type:</strong> <span id="garage_type">Loading...</span></p>
-          <p><strong>Parking Spaces:</strong> <span id="parking_spaces">Loading...</span></p>
-          <p><strong>Architecture Style:</strong> <span id="arch_style">Loading...</span></p>
-          <p><strong>Basement Type:</strong> <span id="basement_type">Loading...</span></p>
-          <p><strong>Basement Size:</strong> <span id="basement_size">Loading...</span></p>
-          <p><strong>Cooling:</strong> <span id="cooling">Loading...</span></p>
-          <p><strong>Heating:</strong> <span id="heating">Loading...</span></p>
-          <p><strong>Property Class:</strong> <span id="property_class">Loading...</span></p>
+    {% if error %}
+        <p style="color: red;">{{ error }}</p>
+    {% endif %}
 
-        `;
-      }
-    }
-  </script>
+    {% if beds %}
+        <p><strong>Beds:</strong> {{ beds }}</p>
+        <p><strong>Baths:</strong> {{ baths }}</p>
+        <p><strong>Sq Ft:</strong> {{ sqft }}</p>
+        <p><strong>Year Built:</strong> {{ year_built }}</p>
+        <p><strong>Garage Type:</strong> {{ garage_type }}</p>
+        <p><strong>Parking Spaces:</strong> {{ parking_spaces }}</p>
+        <p><strong>Architecture Style:</strong> {{ arch_style }}</p>
+        <p><strong>Basement Type:</strong> {{ basement_type }}</p>
+        <p><strong>Basement Size:</strong> {{ basement_size }}</p>
+        <p><strong>Cooling:</strong> {{ cooling }}</p>
+        <p><strong>Heating:</strong> {{ heating }}</p>
+        <p><strong>Property Class:</strong> {{ property_class }}</p>
+    {% endif %}
 </body>
 </html>
