@@ -6,7 +6,7 @@ import json
 app = Flask(__name__)
 
 # ATTOM API Key
-ATTOM_KEY = os.environ.get('ATTOM_KEY', 'YOUR_REAL_KEY_HERE')
+ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
 
 @app.route('/')
 def index():
