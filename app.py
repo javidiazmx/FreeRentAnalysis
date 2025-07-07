@@ -5,7 +5,6 @@ import json
 
 app = Flask(__name__)
 
-# ATTOM API key
 ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
 
 @app.route('/')
@@ -15,14 +14,16 @@ def index():
 @app.route('/lookup', methods=['POST'])
 def lookup():
     try:
-        address = request.form.get('address')
+        address = request.form.get('address')  # ✅ FIXED: no JSON, using form
         if not address:
             return render_template('index.html', error="Missing address")
 
+        # Split address
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
+        # Call ATTOM API
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail',
             params={'address1': address1, 'address2': address2},
@@ -61,15 +62,15 @@ def lookup():
             'property_class': summary.get('bldgType') or prop_summary.get('propclass') or 'N/A'
         }
 
-        # Print structured logs to Render log output
-        print("\n📦 FULL PROPERTY JSON:\n", json.dumps(prop, indent=2))
-        for k, v in data.items():
-            print(f"✅ {k.replace('_', ' ').title()}: {v}")
+        # ✅ Print logs to Render
+        print("📦 Full JSON:\n", json.dumps(prop, indent=2))
+        for key, val in data.items():
+            print(f"✅ {key}: {val}")
 
         return render_template('index.html', address=address, **data)
 
     except Exception as e:
-        print("🔥 Exception:", str(e))
+        print(f"🔥 Error: {e}")
         return render_template('index.html', error=f"Server error: {str(e)}")
 
 if __name__ == '__main__':
