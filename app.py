@@ -21,12 +21,11 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
-        # Split address into components
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
-        # API request
+        # Query ATTOM
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail',
             params={'address1': address1, 'address2': address2},
@@ -47,34 +46,33 @@ def lookup():
         prop = props[0]
         struct = prop.get('building', {})
 
-        print("Parsed Property JSON:")
-        print(json.dumps(prop, indent=2))
+        print("ATTOM PROP JSON:", json.dumps(prop, indent=2))
 
-        # Beds
+        # --- BEDROOMS ---
         beds = struct.get('rooms', {}).get('beds') \
             or prop.get('summary', {}).get('beds_count') \
             or 'N/A'
 
-        # Baths – check top-level 'bathstotal' first
-        raw_baths = prop.get('bathstotal') \
+        # --- BATHROOMS ---
+        baths_raw = prop.get('bathstotal') \
             or struct.get('rooms', {}).get('baths') \
             or prop.get('summary', {}).get('baths_count')
 
-        if raw_baths is not None:
+        if baths_raw is not None:
             try:
-                baths = int(raw_baths) if float(raw_baths).is_integer() else round(float(raw_baths), 1)
+                baths = int(baths_raw) if float(baths_raw).is_integer() else round(float(baths_raw), 1)
             except:
                 baths = 'N/A'
         else:
             baths = 'N/A'
 
-        # Sq Ft
+        # --- SQUARE FOOTAGE ---
         sqft = struct.get('size', {}).get('universalsize') \
             or struct.get('size', {}).get('grosssize') \
             or prop.get('summary', {}).get('building_area') \
             or 'N/A'
 
-        # Year Built — prioritize root-level first
+        # --- YEAR BUILT (correct source: prop['yearbuilt']) ---
         year_built = prop.get('yearbuilt') \
             or struct.get('yearbuilt') \
             or prop.get('summary', {}).get('yearbuilt') \
