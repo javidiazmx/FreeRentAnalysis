@@ -46,17 +46,18 @@ def lookup():
 
         building = prop.get('building', {})
         summary = prop.get('summary', {})
+        rooms = building.get('rooms', {})
 
         beds = (
-            building.get('rooms', {}).get('beds') or
+            rooms.get('beds') or
             summary.get('beds_count') or
             'N/A'
         )
         print("✅ Extracted Beds:", beds, flush=True)
 
         baths = (
-            prop.get('bathstotal') or  # Pull from top-level where it exists
-            building.get('rooms', {}).get('baths') or
+            rooms.get('bathstotal') or
+            rooms.get('bathsfull') or
             summary.get('baths_count') or
             'N/A'
         )
