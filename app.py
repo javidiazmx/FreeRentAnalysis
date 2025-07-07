@@ -5,7 +5,7 @@ import json
 
 app = Flask(__name__)
 
-# ATTOM API key
+# ATTOM API key (fallback for local testing)
 ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
 
 @app.route('/')
@@ -21,11 +21,12 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
+        # Parse address into address1 and address2
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
-        # Query ATTOM
+        # Request to ATTOM
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail',
             params={'address1': address1, 'address2': address2},
@@ -41,41 +42,34 @@ def lookup():
         results = res.json()
         props = results.get('property', [])
         if not props:
-            return jsonify({'error': 'No data found'}), 404
+            return jsonify({'error': 'No property data found'}), 404
 
         prop = props[0]
-        struct = prop.get('building', {})
+        building = prop.get('building', {})
+        summary = prop.get('summary', {})
 
-        print("ATTOM PROP JSON:", json.dumps(prop, indent=2))
-
-        # --- BEDROOMS ---
-        beds = struct.get('rooms', {}).get('beds') \
-            or prop.get('summary', {}).get('beds_count') \
+        # Extract values with correct priority order
+        beds = building.get('rooms', {}).get('beds') \
+            or summary.get('beds_count') \
             or 'N/A'
 
-        # --- BATHROOMS ---
-        baths_raw = prop.get('bathstotal') \
-            or struct.get('rooms', {}).get('baths') \
-            or prop.get('summary', {}).get('baths_count')
-
-        if baths_raw is not None:
-            try:
-                baths = int(baths_raw) if float(baths_raw).is_integer() else round(float(baths_raw), 1)
-            except:
-                baths = 'N/A'
-        else:
-            baths = 'N/A'
-
-        # --- SQUARE FOOTAGE ---
-        sqft = struct.get('size', {}).get('universalsize') \
-            or struct.get('size', {}).get('grosssize') \
-            or prop.get('summary', {}).get('building_area') \
+        baths = prop.get('bathstotal') \
+            or building.get('rooms', {}).get('baths') \
+            or summary.get('baths_count') \
             or 'N/A'
 
-        # --- YEAR BUILT (correct source: prop['yearbuilt']) ---
+        # Normalize bath display (e.g., 3.0 => 3)
+        if isinstance(baths, (int, float)):
+            baths = int(baths) if float(baths).is_integer() else round(float(baths), 1)
+
+        sqft = building.get('size', {}).get('universalsize') \
+            or building.get('size', {}).get('grosssize') \
+            or summary.get('building_area') \
+            or 'N/A'
+
         year_built = prop.get('yearbuilt') \
-            or struct.get('yearbuilt') \
-            or prop.get('summary', {}).get('yearbuilt') \
+            or building.get('yearbuilt') \
+            or summary.get('yearbuilt') \
             or 'N/A'
 
         return jsonify({
