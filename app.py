@@ -5,7 +5,7 @@ import json
 
 app = Flask(__name__)
 
-# ATTOM API Key
+# ATTOM API key
 ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
 
 @app.route('/')
@@ -21,11 +21,12 @@ def lookup():
         if not address:
             return jsonify({'error': 'Missing address'}), 400
 
-        # Separate address1 and address2
+        # Split address into components
         address_parts = address.split(",", 1)
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
+        # API request
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail',
             params={'address1': address1, 'address2': address2},
@@ -46,12 +47,15 @@ def lookup():
         prop = props[0]
         struct = prop.get('building', {})
 
+        print("Parsed Property JSON:")
+        print(json.dumps(prop, indent=2))
+
         # Beds
         beds = struct.get('rooms', {}).get('beds') \
             or prop.get('summary', {}).get('beds_count') \
             or 'N/A'
 
-        # Baths - now checking directly under root property first
+        # Baths – check top-level 'bathstotal' first
         raw_baths = prop.get('bathstotal') \
             or struct.get('rooms', {}).get('baths') \
             or prop.get('summary', {}).get('baths_count')
@@ -70,9 +74,9 @@ def lookup():
             or prop.get('summary', {}).get('building_area') \
             or 'N/A'
 
-        # Year Built
-        year_built = struct.get('yearbuilt') \
-            or prop.get('yearbuilt') \
+        # Year Built — prioritize root-level first
+        year_built = prop.get('yearbuilt') \
+            or struct.get('yearbuilt') \
             or prop.get('summary', {}).get('yearbuilt') \
             or 'N/A'
 
