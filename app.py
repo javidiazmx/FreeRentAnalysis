@@ -70,22 +70,23 @@ def lookup():
     try:
         res = requests.get(API_URL, params=params, headers=headers)
         res.raise_for_status()
-        property_data = res.json()["property"][0]["building"]
-
-        summary = res.json()["property"][0].get("summary", {})
+        json_data = res.json()
+        property_info = json_data["property"][0]
+        building = property_info.get("building", {})
+        summary = property_info.get("summary", {})
 
         details = {
             "architecture": summary.get("archStyle", "N/A"),
-            "basement_size": property_data.get("interior", {}).get("bsmtsize", "N/A"),
-            "basement_type": property_data.get("interior", {}).get("bsmttype", "N/A"),
-            "baths": property_data.get("rooms", {}).get("bathstotal", "N/A"),
-            "beds": property_data.get("rooms", {}).get("beds", "N/A"),
-            "cooling": property_data.get("interior", {}).get("cooling", "N/A"),
-            "garage_type": property_data.get("parking", {}).get("garagetype", "N/A"),
-            "heating": property_data.get("interior", {}).get("heating", "N/A"),
-            "parking_spaces": property_data.get("parking", {}).get("prkgSpaces", "N/A"),
+            "basement_size": building.get("interior", {}).get("bsmtsize", "N/A"),
+            "basement_type": building.get("interior", {}).get("bsmttype", "N/A"),
+            "baths": building.get("rooms", {}).get("bathstotal", "N/A"),
+            "beds": building.get("rooms", {}).get("beds", "N/A"),
+            "cooling": building.get("interior", {}).get("cooling") or "N/A",
+            "garage_type": building.get("parking", {}).get("garagetype", "N/A"),
+            "heating": building.get("interior", {}).get("heating") or "N/A",
+            "parking_spaces": building.get("parking", {}).get("prkgSpaces", "N/A"),
             "property_class": summary.get("propclass", "N/A"),
-            "sqft": property_data.get("size", {}).get("livingsize", "N/A"),
+            "sqft": building.get("size", {}).get("livingsize", "N/A"),
             "year_built": summary.get("yearbuilt", "N/A")
         }
 
