@@ -1,63 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Free Rent Analysis</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    h2 { margin-bottom: 10px; }
-    input { padding: 5px; width: 400px; }
-    button { padding: 5px 10px; }
-    .property-detail { margin-top: 20px; }
-    .property-detail dt { font-weight: bold; margin-top: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    input[type="text"], button {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      font-size: 16px;
+    }
+    .loading {
+      color: #888;
+    }
+    .error {
+      color: red;
+    }
+    .result {
+      background: #f3f3f3;
+      padding: 20px;
+      border-radius: 6px;
+    }
   </style>
 </head>
 <body>
-  <h2>Enter Address</h2>
-  <input type="text" id="addressInput" placeholder="Enter an address">
-  <button onclick="lookupAddress()">Lookup</button>
+  <h1>Free Rent Analysis</h1>
+  <input type="text" id="addressInput" placeholder="Enter address (e.g., 123 Main St, Chicago, IL)" />
+  <button onclick="lookup()">Analyze Property</button>
 
-  <div class="property-detail" id="resultContainer" style="display:none">
-    <h2>Property Details</h2>
-    <dl>
-      <dt>Architecture:</dt><dd id="architecture"></dd>
-      <dt>Basement Size:</dt><dd id="basement_size"></dd>
-      <dt>Basement Type:</dt><dd id="basement_type"></dd>
-      <dt>Baths:</dt><dd id="baths"></dd>
-      <dt>Beds:</dt><dd id="beds"></dd>
-      <dt>Cooling:</dt><dd id="cooling"></dd>
-      <dt>Garage Type:</dt><dd id="garage_type"></dd>
-      <dt>Heating:</dt><dd id="heating"></dd>
-      <dt>Parking Spaces:</dt><dd id="parking_spaces"></dd>
-      <dt>Property Class:</dt><dd id="property_class"></dd>
-      <dt>Sqft:</dt><dd id="sqft"></dd>
-      <dt>Year Built:</dt><dd id="year_built"></dd>
-      <dt>Construction Type:</dt><dd id="construction_type"></dd>
-      <dt>Wall Type:</dt><dd id="wall_type"></dd>
-      <dt>Levels:</dt><dd id="levels"></dd>
-      <dt>Story Description:</dt><dd id="story_description"></dd>
-      <dt>View:</dt><dd id="view"></dd>
-    </dl>
-  </div>
+  <div id="message" class="loading"></div>
+  <div id="results" class="result" style="display: none;"></div>
 
   <script>
-    async function lookupAddress() {
-      const address = document.getElementById('addressInput').value;
-      const response = await fetch('/lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address })
-      });
+    async function lookup() {
+      const address = document.getElementById("addressInput").value;
+      const messageEl = document.getElementById("message");
+      const resultsEl = document.getElementById("results");
+      resultsEl.style.display = "none";
+      messageEl.innerText = "Loading...";
 
-      const data = await response.json();
-      console.log(data);
+      try {
+        const response = await fetch("/lookup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ address })
+        });
 
-      for (const [key, value] of Object.entries(data)) {
-        const el = document.getElementById(key);
-        if (el) el.textContent = value;
+        const data = await response.json();
+
+        if (!response.ok) {
+          messageEl.innerText = data.error || "Something went wrong.";
+          return;
+        }
+
+        messageEl.innerText = "";
+        resultsEl.style.display = "block";
+        resultsEl.innerHTML = `
+          <strong>Beds:</strong> ${data.beds}<br/>
+          <strong>Baths:</strong> ${data.baths}<br/>
+          <strong>SqFt:</strong> ${data.sqft}<br/>
+          <strong>Year Built:</strong> ${data.year_built}<br/>
+          <strong>Architecture:</strong> ${data.architecture}<br/>
+          <strong>Basement Type:</strong> ${data.basement_type}<br/>
+          <strong>Basement Size:</strong> ${data.basement_size}<br/>
+          <strong>Garage Type:</strong> ${data.garage_type}<br/>
+          <strong>Parking Spaces:</strong> ${data.parking_spaces}<br/>
+          <strong>Heating:</strong> ${data.heating}<br/>
+          <strong>Cooling:</strong> ${data.cooling}<br/>
+          <strong>Property Class:</strong> ${data.property_class}
+        `;
+      } catch (err) {
+        messageEl.innerText = "Server error.";
+        console.error(err);
       }
-
-      document.getElementById('resultContainer').style.display = 'block';
     }
   </script>
 </body>
