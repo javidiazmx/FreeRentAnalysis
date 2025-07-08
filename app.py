@@ -5,7 +5,7 @@ import logging
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-API_KEY = "12345678-90ab-cdef-1234-567890abcdef"
+API_KEY = "ada28deedfc084dcea40ac71125d3a6e"
 API_URL = "https://search.onboard-apis.com/propertyapi/v1.0.0/property/detail"
 
 HTML_TEMPLATE = '''
