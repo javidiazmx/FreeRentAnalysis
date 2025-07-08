@@ -4,87 +4,61 @@
   <meta charset="UTF-8">
   <title>Free Rent Analysis</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 40px;
-      max-width: 600px;
-    }
-
-    h1 {
-      font-size: 24px;
-    }
-
-    form {
-      margin-bottom: 20px;
-    }
-
-    input[type="text"] {
-      width: 80%;
-      padding: 8px;
-      font-size: 16px;
-    }
-
-    button {
-      padding: 8px 12px;
-      font-size: 16px;
-    }
-
-    #result ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    #result li {
-      margin-bottom: 8px;
-    }
-
-    #result strong {
-      display: inline-block;
-      width: 160px;
-    }
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    h2 { margin-bottom: 10px; }
+    input { padding: 5px; width: 400px; }
+    button { padding: 5px 10px; }
+    .property-detail { margin-top: 20px; }
+    .property-detail dt { font-weight: bold; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>Enter Address</h1>
-  <form id="lookup-form">
-    <input type="text" id="address" placeholder="123 Main St, City, State, ZIP" required />
-    <button type="submit">Lookup</button>
-  </form>
+  <h2>Enter Address</h2>
+  <input type="text" id="addressInput" placeholder="Enter an address">
+  <button onclick="lookupAddress()">Lookup</button>
 
-  <div id="result"></div>
+  <div class="property-detail" id="resultContainer" style="display:none">
+    <h2>Property Details</h2>
+    <dl>
+      <dt>Architecture:</dt><dd id="architecture"></dd>
+      <dt>Basement Size:</dt><dd id="basement_size"></dd>
+      <dt>Basement Type:</dt><dd id="basement_type"></dd>
+      <dt>Baths:</dt><dd id="baths"></dd>
+      <dt>Beds:</dt><dd id="beds"></dd>
+      <dt>Cooling:</dt><dd id="cooling"></dd>
+      <dt>Garage Type:</dt><dd id="garage_type"></dd>
+      <dt>Heating:</dt><dd id="heating"></dd>
+      <dt>Parking Spaces:</dt><dd id="parking_spaces"></dd>
+      <dt>Property Class:</dt><dd id="property_class"></dd>
+      <dt>Sqft:</dt><dd id="sqft"></dd>
+      <dt>Year Built:</dt><dd id="year_built"></dd>
+      <dt>Construction Type:</dt><dd id="construction_type"></dd>
+      <dt>Wall Type:</dt><dd id="wall_type"></dd>
+      <dt>Levels:</dt><dd id="levels"></dd>
+      <dt>Story Description:</dt><dd id="story_description"></dd>
+      <dt>View:</dt><dd id="view"></dd>
+    </dl>
+  </div>
 
   <script>
-    document.getElementById('lookup-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const address = document.getElementById('address').value;
+    async function lookupAddress() {
+      const address = document.getElementById('addressInput').value;
+      const response = await fetch('/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address })
+      });
 
-      try {
-        const res = await fetch('/lookup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ address })
-        });
+      const data = await response.json();
+      console.log(data);
 
-        const data = await res.json();
-
-        if (data.error) {
-          document.getElementById('result').innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
-          return;
-        }
-
-        let html = '<h2>Property Details</h2><ul>';
-        for (const [key, value] of Object.entries(data)) {
-          html += `<li><strong>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> ${value}</li>`;
-        }
-        html += '</ul>';
-
-        document.getElementById('result').innerHTML = html;
-
-      } catch (err) {
-        document.getElementById('result').innerHTML = `<p style="color:red;">Request failed</p>`;
-        console.error('Request error:', err);
+      for (const [key, value] of Object.entries(data)) {
+        const el = document.getElementById(key);
+        if (el) el.textContent = value;
       }
-    });
+
+      document.getElementById('resultContainer').style.display = 'block';
+    }
   </script>
 </body>
 </html>
