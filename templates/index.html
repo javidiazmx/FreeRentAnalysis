@@ -1,88 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Free Rent Analysis</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 30px auto;
-      padding: 20px;
-      line-height: 1.6;
+      padding: 30px;
+      max-width: 700px;
+      margin: auto;
     }
-    input[type="text"], button {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 20px;
+
+    h1, h2 {
+      color: #222;
+    }
+
+    input[type="text"] {
+      width: 80%;
+      padding: 8px;
       font-size: 16px;
     }
-    .loading {
-      color: #888;
+
+    button {
+      padding: 8px 16px;
+      font-size: 16px;
+      margin-left: 10px;
     }
-    .error {
-      color: red;
+
+    .property-label {
+      font-weight: bold;
     }
-    .result {
-      background: #f3f3f3;
-      padding: 20px;
-      border-radius: 6px;
+
+    .property-container {
+      margin-top: 30px;
+    }
+
+    .property-row {
+      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>Free Rent Analysis</h1>
-  <input type="text" id="addressInput" placeholder="Enter address (e.g., 123 Main St, Chicago, IL)" />
-  <button onclick="lookup()">Analyze Property</button>
+  <h1>Enter Address</h1>
+  <input type="text" id="address" placeholder="123 Main St, Chicago, IL" />
+  <button onclick="lookup()">Lookup</button>
 
-  <div id="message" class="loading"></div>
-  <div id="results" class="result" style="display: none;"></div>
+  <div class="property-container" id="results" style="display: none;">
+    <h2>Property Details</h2>
+    <div class="property-row"><span class="property-label">Architecture:</span> <span id="architecture"></span></div>
+    <div class="property-row"><span class="property-label">Basement Size:</span> <span id="basement_size"></span></div>
+    <div class="property-row"><span class="property-label">Basement Type:</span> <span id="basement_type"></span></div>
+    <div class="property-row"><span class="property-label">Baths:</span> <span id="baths"></span></div>
+    <div class="property-row"><span class="property-label">Beds:</span> <span id="beds"></span></div>
+    <div class="property-row"><span class="property-label">Cooling:</span> <span id="cooling"></span></div>
+    <div class="property-row"><span class="property-label">Garage Type:</span> <span id="garage_type"></span></div>
+    <div class="property-row"><span class="property-label">Heating:</span> <span id="heating"></span></div>
+    <div class="property-row"><span class="property-label">Parking Spaces:</span> <span id="parking_spaces"></span></div>
+    <div class="property-row"><span class="property-label">Property Class:</span> <span id="property_class"></span></div>
+    <div class="property-row"><span class="property-label">Sqft:</span> <span id="sqft"></span></div>
+    <div class="property-row"><span class="property-label">Year Built:</span> <span id="year_built"></span></div>
+  </div>
 
   <script>
     async function lookup() {
-      const address = document.getElementById("addressInput").value;
-      const messageEl = document.getElementById("message");
-      const resultsEl = document.getElementById("results");
-      resultsEl.style.display = "none";
-      messageEl.innerText = "Loading...";
+      const address = document.getElementById('address').value;
+      const res = await fetch('/lookup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ address })
+      });
 
-      try {
-        const response = await fetch("/lookup", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ address })
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          messageEl.innerText = data.error || "Something went wrong.";
-          return;
-        }
-
-        messageEl.innerText = "";
-        resultsEl.style.display = "block";
-        resultsEl.innerHTML = `
-          <strong>Beds:</strong> ${data.beds}<br/>
-          <strong>Baths:</strong> ${data.baths}<br/>
-          <strong>SqFt:</strong> ${data.sqft}<br/>
-          <strong>Year Built:</strong> ${data.year_built}<br/>
-          <strong>Architecture:</strong> ${data.architecture}<br/>
-          <strong>Basement Type:</strong> ${data.basement_type}<br/>
-          <strong>Basement Size:</strong> ${data.basement_size}<br/>
-          <strong>Garage Type:</strong> ${data.garage_type}<br/>
-          <strong>Parking Spaces:</strong> ${data.parking_spaces}<br/>
-          <strong>Heating:</strong> ${data.heating}<br/>
-          <strong>Cooling:</strong> ${data.cooling}<br/>
-          <strong>Property Class:</strong> ${data.property_class}
-        `;
-      } catch (err) {
-        messageEl.innerText = "Server error.";
-        console.error(err);
+      if (!res.ok) {
+        alert("Lookup failed. Please check the address.");
+        return;
       }
+
+      const data = await res.json();
+
+      document.getElementById('architecture').textContent = data.architecture || "N/A";
+      document.getElementById('basement_size').textContent = data.basement_size || "N/A";
+      document.getElementById('basement_type').textContent = data.basement_type || "N/A";
+      document.getElementById('baths').textContent = data.baths || "N/A";
+      document.getElementById('beds').textContent = data.beds || "N/A";
+      document.getElementById('cooling').textContent = data.cooling || "N/A";
+      document.getElementById('garage_type').textContent = data.garage_type || "N/A";
+      document.getElementById('heating').textContent = data.heating || "N/A";
+      document.getElementById('parking_spaces').textContent = data.parking_spaces || "N/A";
+      document.getElementById('property_class').textContent = data.property_class || "N/A";
+      document.getElementById('sqft').textContent = data.sqft || "N/A";
+      document.getElementById('year_built').textContent = data.year_built || "N/A";
+
+      document.getElementById('results').style.display = 'block';
     }
   </script>
 </body>
