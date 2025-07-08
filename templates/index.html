@@ -1,43 +1,31 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Free Rent Analysis</title>
-    <style>
-        body {
-            font-family: Arial;
-            max-width: 600px;
-            margin: 40px auto;
-        }
-        label, p {
-            font-weight: bold;
-        }
-    </style>
+  <title>Free Rent Analysis</title>
 </head>
 <body>
-    <h2>Free Rent Analysis</h2>
+  <h1>Enter Address</h1>
+  <form id="lookup-form">
+    <input type="text" id="address" placeholder="123 Main St, City, ST ZIP" size="50">
+    <button type="submit">Lookup</button>
+  </form>
 
-    <form method="POST" action="/lookup">
-        <input type="text" name="address" placeholder="Enter full address" value="{{ address or '' }}" required>
-        <button type="submit">Analyze</button>
-    </form>
+  <pre id="result"></pre>
 
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+  <script>
+    document.getElementById('lookup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const address = document.getElementById('address').value;
 
-    {% if beds %}
-        <p><strong>Beds:</strong> {{ beds }}</p>
-        <p><strong>Baths:</strong> {{ baths }}</p>
-        <p><strong>Sq Ft:</strong> {{ sqft }}</p>
-        <p><strong>Year Built:</strong> {{ year_built }}</p>
-        <p><strong>Garage Type:</strong> {{ garage_type }}</p>
-        <p><strong>Parking Spaces:</strong> {{ parking_spaces }}</p>
-        <p><strong>Architecture Style:</strong> {{ arch_style }}</p>
-        <p><strong>Basement Type:</strong> {{ basement_type }}</p>
-        <p><strong>Basement Size:</strong> {{ basement_size }}</p>
-        <p><strong>Cooling:</strong> {{ cooling }}</p>
-        <p><strong>Heating:</strong> {{ heating }}</p>
-        <p><strong>Property Class:</strong> {{ property_class }}</p>
-    {% endif %}
+      const res = await fetch('/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address })
+      });
+
+      const data = await res.json();
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    });
+  </script>
 </body>
 </html>
