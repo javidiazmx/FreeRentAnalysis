@@ -1,66 +1,102 @@
-import os
-import logging
+from flask import Flask, request, jsonify, render_template_string
 import requests
-from flask import Flask, request, jsonify, render_template
+import logging
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+API_KEY = "12345678-90ab-cdef-1234-567890abcdef"
+API_URL = "https://search.onboard-apis.com/propertyapi/v1.0.0/property/detail"
 
-@app.route('/lookup', methods=['POST'])
+HTML_TEMPLATE = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Free Rent Analysis</title>
+</head>
+<body>
+    <h2>Enter Address</h2>
+    <input type="text" id="address" value="5565 Cambridge Way, Hanover Park, IL 60133, USA" style="width: 500px">
+    <button onclick="lookup()">Lookup</button>
+    <h2>Property Details</h2>
+    <div id="results"></div>
+
+    <script>
+    async function lookup() {
+        const address = document.getElementById("address").value;
+        const response = await fetch("/lookup", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({address})
+        });
+
+        const resultDiv = document.getElementById("results");
+        if (response.ok) {
+            const data = await response.json();
+            let html = "<ul>";
+            for (const [key, value] of Object.entries(data)) {
+                html += `<li><strong>${key.replace(/_/g, ' ')}:</strong> ${value}</li>`;
+            }
+            html += "</ul>";
+            resultDiv.innerHTML = html;
+        } else {
+            alert("Lookup failed. Please check the address.");
+        }
+    }
+    </script>
+</body>
+</html>
+'''
+
+@app.route("/", methods=["GET"])
+def index():
+    return render_template_string(HTML_TEMPLATE)
+
+@app.route("/lookup", methods=["POST"])
 def lookup():
     data = request.get_json()
-    address = data.get("address", "").strip()
-    app.logger.info(f"📍 Received address: {address}")
+    address = data.get("address")
+    logging.info(f"📍 Received address: {address}")
 
-    if not address:
-        return jsonify({"error": "Address is required"}), 400
-
-    url = "https://search.onboard-apis.com/propertyapi/v1.0.0/property/detail"
     params = {
-        "address1": address,
+        "address1": address.split(", USA")[0],
         "address2": "USA"
     }
-
     headers = {
         "accept": "application/json",
-        "apikey": os.environ.get("RENT_API_KEY")  # 🔑 Make sure this is set in your environment!
+        "apikey": API_KEY
     }
 
     try:
-        response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()
-        data = response.json()
-        app.logger.info("✅ Property data fetched")
+        res = requests.get(API_URL, params=params, headers=headers)
+        res.raise_for_status()
+        property_data = res.json()["property"][0]["building"]
 
-        # Parse details
-        prop = data["property"][0]
+        summary = res.json()["property"][0].get("summary", {})
+
         details = {
-            "architecture": prop.get("building", {}).get("summary", {}).get("archStyle", "N/A"),
-            "basement_size": prop.get("building", {}).get("interior", {}).get("bsmtsize", "N/A"),
-            "basement_type": prop.get("building", {}).get("interior", {}).get("bsmttype", "N/A"),
-            "baths": prop.get("building", {}).get("rooms", {}).get("bathstotal", "N/A"),
-            "beds": prop.get("building", {}).get("rooms", {}).get("beds", "N/A"),
-            "cooling": prop.get("building", {}).get("interior", {}).get("cooling", "N/A"),
-            "garage_type": prop.get("building", {}).get("parking", {}).get("garagetype", "N/A"),
-            "heating": prop.get("building", {}).get("interior", {}).get("heating", "N/A"),
-            "parking_spaces": prop.get("building", {}).get("parking", {}).get("prkgSpaces", "N/A"),
-            "property_class": prop.get("summary", {}).get("propclass", "N/A"),
-            "sqft": prop.get("building", {}).get("size", {}).get("livingsize", "N/A"),
-            "year_built": prop.get("summary", {}).get("yearbuilt", "N/A")
+            "architecture": summary.get("archStyle", "N/A"),
+            "basement_size": property_data.get("interior", {}).get("bsmtsize", "N/A"),
+            "basement_type": property_data.get("interior", {}).get("bsmttype", "N/A"),
+            "baths": property_data.get("rooms", {}).get("bathstotal", "N/A"),
+            "beds": property_data.get("rooms", {}).get("beds", "N/A"),
+            "cooling": property_data.get("interior", {}).get("cooling", "N/A"),
+            "garage_type": property_data.get("parking", {}).get("garagetype", "N/A"),
+            "heating": property_data.get("interior", {}).get("heating", "N/A"),
+            "parking_spaces": property_data.get("parking", {}).get("prkgSpaces", "N/A"),
+            "property_class": summary.get("propclass", "N/A"),
+            "sqft": property_data.get("size", {}).get("livingsize", "N/A"),
+            "year_built": summary.get("yearbuilt", "N/A")
         }
 
-        app.logger.info(f"✅ Extracted data: {details}")
+        logging.info(f"✅ Extracted data: {details}")
         return jsonify(details)
 
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"❌ API request failed: {e}")
-        return jsonify({"error": "Lookup failed. Please check the address or try again later."}), 500
+    except requests.RequestException as e:
+        logging.error(f"❌ API request failed: {e}")
+        return jsonify({"error": "Failed to fetch property data"}), 500
 
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=True, host='0.0.0.0', port=port)
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
