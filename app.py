@@ -1,21 +1,20 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import requests
 import os
 import json
 
 app = Flask(__name__)
-ATTOM_KEY = os.environ.get('ATTOM_KEY', 'ada28deedfc084dcea40ac71125d3a6e')
 
-@app.route('/', methods=['GET'])
-def home():
-    return jsonify({"message": "Free Rent Analysis API is running"}), 200
+# Set your ATTOM API key here
+ATTOM_KEY = os.environ.get('ATTOM_KEY', 'YOUR_API_KEY_HERE')
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/lookup', methods=['POST'])
 def lookup():
     try:
-        if not request.is_json:
-            return jsonify({'error': "Unsupported Media Type: request must be JSON"}), 415
-
         data = request.get_json()
         address = data.get('address')
 
@@ -26,6 +25,7 @@ def lookup():
         address1 = address_parts[0].strip()
         address2 = address_parts[1].strip() if len(address_parts) > 1 else ''
 
+        # Make API request
         res = requests.get(
             'https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail',
             params={'address1': address1, 'address2': address2},
@@ -44,37 +44,37 @@ def lookup():
             return jsonify({'error': 'No data found'}), 404
 
         prop = props[0]
-        print("✅ Full ATTOM JSON:", json.dumps(prop, indent=2))
+        struct = prop.get('building', {})
 
-        building = prop.get('building', {})
-        rooms = building.get('rooms', {})
-        size = building.get('size', {})
-        parking = building.get('parking', {})
-        summary = building.get('summary', {})
-        interior = building.get('interior', {})
-        construction = building.get('construction', {})
+        # Extract values
+        beds = struct.get('rooms', {}).get('beds') or 'N/A'
+        baths = struct.get('rooms', {}).get('bathstotal') or 'N/A'
+        sqft = struct.get('size', {}).get('universalsize') or struct.get('size', {}).get('grosssize') or 'N/A'
+        year_built = struct.get('yearbuilt') or 'N/A'
 
-        # Basic Fields
-        beds = rooms.get('beds') or 'N/A'
-        baths = rooms.get('bathstotal') or 'N/A'
-        sqft = size.get('universalsize') or size.get('grosssize') or size.get('livingsize') or 'N/A'
-        year_built = building.get('yearbuilt') or prop.get('summary', {}).get('yearbuilt') or 'N/A'
+        garage_type = struct.get('parking', {}).get('garagetype', 'N/A')
+        parking_spaces = struct.get('parking', {}).get('prkgSpaces', 'N/A')
+        basement_type = struct.get('interior', {}).get('bsmttype', 'N/A')
+        basement_size = struct.get('interior', {}).get('bsmtsize', 'N/A')
+        architecture = struct.get('summary', {}).get('archStyle', 'N/A')
+        heating = struct.get('utilities', {}).get('heatsystem', 'N/A')
+        cooling = struct.get('utilities', {}).get('coolsystem', 'N/A')
+        property_class = prop.get('area', {}).get('countyuse1', 'N/A')
 
-        # Extra Fields
-        garage_type = parking.get('garagetype') or 'N/A'
-        parking_spaces = parking.get('prkgSpaces') or 'N/A'
-        architecture_style = summary.get('archStyle') or 'N/A'
-        basement_type = interior.get('bsmttype') or 'N/A'
-        basement_size = interior.get('bsmtsize') or 'N/A'
-        cooling_type = building.get('utilities', {}).get('coolingtype') or 'N/A'
-        heating_type = building.get('utilities', {}).get('heatingtype') or 'N/A'
-        property_class = summary.get('bldgType') or 'N/A'
-
-        print("✅ Extracted Data:")
-        print(f"Beds: {beds}, Baths: {baths}, SqFt: {sqft}, Year Built: {year_built}")
-        print(f"Garage: {garage_type}, Parking Spaces: {parking_spaces}")
-        print(f"Architecture: {architecture_style}, Basement: {basement_type} - {basement_size}")
-        print(f"Cooling: {cooling_type}, Heating: {heating_type}, Class: {property_class}")
+        # Log all extracted fields
+        print("✅ Extracted Values:")
+        print(f"Beds: {beds}")
+        print(f"Baths: {baths}")
+        print(f"SqFt: {sqft}")
+        print(f"Year Built: {year_built}")
+        print(f"Garage Type: {garage_type}")
+        print(f"Parking Spaces: {parking_spaces}")
+        print(f"Basement Type: {basement_type}")
+        print(f"Basement Size: {basement_size}")
+        print(f"Architecture: {architecture}")
+        print(f"Heating: {heating}")
+        print(f"Cooling: {cooling}")
+        print(f"Property Class: {property_class}")
 
         return jsonify({
             'beds': beds,
@@ -83,16 +83,16 @@ def lookup():
             'year_built': year_built,
             'garage_type': garage_type,
             'parking_spaces': parking_spaces,
-            'architecture_style': architecture_style,
             'basement_type': basement_type,
             'basement_size': basement_size,
-            'cooling_type': cooling_type,
-            'heating_type': heating_type,
+            'architecture': architecture,
+            'heating': heating,
+            'cooling': cooling,
             'property_class': property_class
         })
 
     except Exception as e:
-        print(f"❌ Exception occurred: {e}")
+        print(f"Exception occurred: {e}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 if __name__ == '__main__':
