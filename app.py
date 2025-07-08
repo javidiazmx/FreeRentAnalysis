@@ -21,7 +21,7 @@ def lookup():
     url = "https://search.onboard-apis.com/propertyapi/v1.0.0/property/detail"
     headers = {
         "accept": "application/json",
-        "apikey": os.getenv("RENT_API_KEY")  # Ensure this is set in Render environment
+        "apikey": os.getenv("ada28deedfc084dcea40ac71125d3a6e")  # Ensure this is set in Render environment
     }
     params = {
         "address1": address,
