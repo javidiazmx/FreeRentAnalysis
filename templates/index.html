@@ -1,63 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Free Rent Analysis</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 700px; margin: auto; }
-    h1 { font-size: 24px; }
-    input[type="text"] { width: 80%; padding: 10px; margin-right: 10px; }
-    button { padding: 10px 20px; }
-    .results { margin-top: 30px; }
-    .results h2 { font-size: 20px; }
-    .results p { line-height: 1.6; }
-    strong { display: inline-block; width: 140px; }
-  </style>
+    <title>Free Rent Analysis</title>
 </head>
 <body>
-  <h1>Enter Address</h1>
-  <input type="text" id="address" placeholder="123 Main St, City, State ZIP">
-  <button onclick="lookup()">Lookup</button>
-
-  <div class="results" id="results" style="display: none;">
+    <h2>Enter Address</h2>
+    <input type="text" id="address" value="5565 Cambridge Way, Hanover Park, IL 60133, USA" style="width: 500px">
+    <button onclick="lookup()">Lookup</button>
     <h2>Property Details</h2>
-    <p><strong>Architecture:</strong> <span id="architecture"></span></p>
-    <p><strong>Basement Size:</strong> <span id="basement_size"></span></p>
-    <p><strong>Basement Type:</strong> <span id="basement_type"></span></p>
-    <p><strong>Baths:</strong> <span id="baths"></span></p>
-    <p><strong>Beds:</strong> <span id="beds"></span></p>
-    <p><strong>Cooling:</strong> <span id="cooling"></span></p>
-    <p><strong>Garage Type:</strong> <span id="garage_type"></span></p>
-    <p><strong>Heating:</strong> <span id="heating"></span></p>
-    <p><strong>Parking Spaces:</strong> <span id="parking_spaces"></span></p>
-    <p><strong>Property Class:</strong> <span id="property_class"></span></p>
-    <p><strong>Sqft:</strong> <span id="sqft"></span></p>
-    <p><strong>Year Built:</strong> <span id="year_built"></span></p>
-  </div>
+    <div id="results"></div>
 
-  <script>
-    function lookup() {
-      const address = document.getElementById('address').value;
-      fetch('/lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address })
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Lookup failed");
-        return res.json();
-      })
-      .then(data => {
-        document.getElementById('results').style.display = 'block';
-        for (const key in data) {
-          const el = document.getElementById(key);
-          if (el) el.textContent = data[key];
+    <script>
+    async function lookup() {
+        const address = document.getElementById("address").value;
+        const response = await fetch("/lookup", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({address})
+        });
+
+        const resultDiv = document.getElementById("results");
+        if (response.ok) {
+            const data = await response.json();
+            let html = "<ul>";
+            for (const [key, value] of Object.entries(data)) {
+                html += `<li><strong>${key.replace(/_/g, ' ')}:</strong> ${value}</li>`;
+            }
+            html += "</ul>";
+            resultDiv.innerHTML = html;
+        } else {
+            alert("Lookup failed. Please check the address.");
         }
-      })
-      .catch(() => {
-        alert("Lookup failed. Please check the address.");
-      });
     }
-  </script>
+    </script>
 </body>
 </html>
