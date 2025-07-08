@@ -1,30 +1,89 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Free Rent Analysis</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      max-width: 600px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      width: 80%;
+      padding: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 8px 12px;
+      font-size: 16px;
+    }
+
+    #result ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    #result li {
+      margin-bottom: 8px;
+    }
+
+    #result strong {
+      display: inline-block;
+      width: 160px;
+    }
+  </style>
 </head>
 <body>
   <h1>Enter Address</h1>
   <form id="lookup-form">
-    <input type="text" id="address" placeholder="123 Main St, City, ST ZIP" size="50">
+    <input type="text" id="address" placeholder="123 Main St, City, State, ZIP" required />
     <button type="submit">Lookup</button>
   </form>
 
-  <pre id="result"></pre>
+  <div id="result"></div>
 
   <script>
     document.getElementById('lookup-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const address = document.getElementById('address').value;
 
-      const res = await fetch('/lookup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address })
-      });
+      try {
+        const res = await fetch('/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ address })
+        });
 
-      const data = await res.json();
-      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        const data = await res.json();
+
+        if (data.error) {
+          document.getElementById('result').innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
+          return;
+        }
+
+        let html = '<h2>Property Details</h2><ul>';
+        for (const [key, value] of Object.entries(data)) {
+          html += `<li><strong>${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> ${value}</li>`;
+        }
+        html += '</ul>';
+
+        document.getElementById('result').innerHTML = html;
+
+      } catch (err) {
+        document.getElementById('result').innerHTML = `<p style="color:red;">Request failed</p>`;
+        console.error('Request error:', err);
+      }
     });
   </script>
 </body>
