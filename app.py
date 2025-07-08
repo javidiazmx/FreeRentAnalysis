@@ -3,75 +3,73 @@ import logging
 from flask import Flask, request, jsonify, render_template
 import requests
 
-app = Flask(__name__, template_folder="templates")
+app = Flask(__name__)
 
-# Set up logging
+# Enable detailed logging
 logging.basicConfig(level=logging.INFO)
 
 @app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template('index.html')
 
 @app.route('/lookup', methods=['POST'])
 def lookup():
-    if not request.is_json:
-        return jsonify({"error": "Request must be JSON"}), 415
-
     data = request.get_json()
-    address = data.get("address", "")
-    logging.info(f"📍 Received address: {address}")
+    address = data.get('address', '')
+    app.logger.info(f"📍 Received address: {address}")
 
-    if not address:
-        return jsonify({"error": "No address provided"}), 400
+    url = "https://search.onboard-apis.com/propertyapi/v1.0.0/property/detail"
+    headers = {
+        "accept": "application/json",
+        "apikey": os.getenv("RENT_API_KEY")  # Ensure this is set in Render environment
+    }
+    params = {
+        "address1": address,
+        "address2": "USA"
+    }
 
     try:
-        # Replace this with your actual API key and endpoint
-        api_url = "https://api.gateway.attomdata.com/propertyapi/v1.0.0/property/detail"
-        headers = {
-            "apikey": os.environ.get("ATTOM_API_KEY", "ada28deedfc084dcea40ac71125d3a6e")
-        }
-        params = {"address": address}
-
-        response = requests.get(api_url, headers=headers, params=params)
+        response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
         property_data = response.json()
-        logging.info("✅ Property data fetched")
+        app.logger.info("✅ Property data fetched")
 
-        # Drill into response safely
         result = property_data.get("property", [{}])[0]
-
         building = result.get("building", {})
-        size = building.get("size", {})
-        rooms = building.get("rooms", {})
+        summary = result.get("summary", {})
         interior = building.get("interior", {})
-        construction = building.get("construction", {})
+        rooms = building.get("rooms", {})
         parking = building.get("parking", {})
-        summary = building.get("summary", {})
-        vintage = result.get("vintage", {})
 
-        data_out = {
+        # Log full building structure to find hidden fields like cooling/heating
+        import json
+        app.logger.info("🧱 Building JSON:\n" + json.dumps(building, indent=2))
+
+        data = {
             "architecture": summary.get("archStyle", "N/A"),
             "basement_size": interior.get("bsmtsize", "N/A"),
             "basement_type": interior.get("bsmttype", "N/A"),
             "baths": rooms.get("bathstotal", "N/A"),
             "beds": rooms.get("beds", "N/A"),
-            "cooling": building.get("cooling", "N/A"),
-            "heating": building.get("heating", "N/A"),
+            "cooling": building.get("cooling", "N/A"),  # Likely missing
+            "heating": building.get("heating", "N/A"),  # Likely missing
             "garage_type": parking.get("garagetype", "N/A"),
             "parking_spaces": parking.get("prkgSpaces", "N/A"),
-            "property_class": result.get("summary", {}).get("propclass", "N/A"),
-            "sqft": size.get("livingsize", "N/A"),
-            "year_built": result.get("summary", {}).get("yearbuilt", "N/A")
+            "property_class": summary.get("propclass", "N/A"),
+            "sqft": building.get("size", {}).get("livingsize", "N/A"),
+            "year_built": summary.get("yearbuilt", "N/A")
         }
 
-        logging.info(f"✅ Extracted data: {data_out}")
-        return jsonify(data_out)
+        app.logger.info(f"✅ Extracted data: {data}")
+        return jsonify(data)
 
+    except requests.RequestException as e:
+        app.logger.error(f"❌ API request failed: {e}")
+        return jsonify({"error": "Failed to retrieve property data"}), 500
     except Exception as e:
-        logging.exception("❌ Error during lookup")
-        return jsonify({"error": "An error occurred", "details": str(e)}), 500
-
+        app.logger.error(f"❌ Unexpected error: {e}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get('PORT', 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
